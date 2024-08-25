@@ -198,27 +198,26 @@ void ESPTime::recalc_timestamp_local(bool use_day_of_year) {
 }
 
 int32_t ESPTime::timezone_offset() {
-  int32_t offset = 0;
-  time_t now = ::time(nullptr);
-  auto local = ESPTime::from_epoch_local(now);
-  auto utc = ESPTime::from_epoch_utc(now);
-  bool negative = utc.hour > local.hour && local.day_of_year <= utc.day_of_year;
+    int32_t offset = 0;
+    time_t now = ::time(nullptr);
+    auto local = ESPTime::from_epoch_local(now);
+    auto utc = ESPTime::from_epoch_utc(now);
 
-  if (utc.minute > local.minute) {
-    local.minute += 60;
-    local.hour -= 1;
-  }
-  offset += (local.minute - utc.minute) * 60;
+    if (utc.minute > local.minute) {
+        local.minute += 60;
+        local.hour -= 1;
+    }
+    offset += (local.minute - utc.minute) * 60;
 
-  if (negative) {
-    offset -= (utc.hour - local.hour) * 3600;
-  } else {
-    if (utc.hour > local.hour) {
-      local.hour += 24;
+    if (local.hour < utc.hour) {
+        local.hour += 24;
     }
     offset += (local.hour - utc.hour) * 3600;
-  }
-  return offset;
+
+    if (local.day_of_year < utc.day_of_year || (local.day_of_year == utc.day_of_year && local.hour < utc.hour)) {
+        offset = -offset;
+    }
+    return offset;
 }
 
 bool ESPTime::operator<(ESPTime other) { return this->timestamp < other.timestamp; }
